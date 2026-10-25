@@ -1,83 +1,170 @@
-#  TypeORM / Express / TypeScript RESTful API boilerplate
+# VetClinic Backend
 
-[![CI][build-badge]][build-url]
-[![TypeScript][typescript-badge]][typescript-url]
-[![prettier][prettier-badge]][prettier-url]
-![Heisenberg](misc/heisenberg.png)
+REST API для інформаційної системи «Ветеринарна клініка» (VetClinic IS). Проєкт створено на основі boilerplate [typeorm-express-typescript](https://github.com/mkosir/typeorm-express-typescript) у межах лабораторно-практичної роботи №5.
 
-Boilerplate with focus on best practices and painless developer experience:
+**Стек:** Node.js, Express, TypeORM, PostgreSQL 14, TypeScript, Docker Compose.
 
-- Minimal setup that can be extended 🔧
-- Spin it up with single command 🌀
-- TypeScript first
-- RESTful APIs
-- JWT authentication with role based authorization
+## Реалізовані сутності та зв'язки
 
-## Requirements
+### Сутності
 
-- [Node v16+](https://nodejs.org/)
-- [Docker](https://www.docker.com/)
+**Client (`clients`)** — клієнт клініки, власник тварин.
 
-## Running
+| Поле | Тип | Обмеження |
+|---|---|---|
+| id | serial | первинний ключ |
+| phone | varchar(13) | унікальне, формат `+380XXXXXXXXX` |
+| last_name, first_name, patronymic | varchar(30) | обов'язкові |
+| birth_date | date | обов'язкове, раніше за поточну дату |
+| email | varchar(255) | унікальне, формат електронної пошти |
 
-_Easily set up a local development environment with single command!_
+**Employee (`employees`)** — співробітник клініки.
 
-- clone the repo
-- `npm run docker:dev` 🚀
+| Поле | Тип | Обмеження |
+|---|---|---|
+| id | serial | первинний ключ |
+| phone | varchar(13) | унікальне, формат `+380XXXXXXXXX` |
+| last_name, first_name, patronymic | varchar(30) | обов'язкові |
+| position | varchar(50) | обов'язкове |
+| email | varchar(255) | унікальне, формат електронної пошти |
 
-Visit [localhost:4000](http://localhost:4000/) or if using Postman grab [config](/postman).
+**MedicalCard (`medical_cards`)** — медична картка тварини.
 
-### _What happened_ 💥
+| Поле | Тип | Обмеження |
+|---|---|---|
+| id | serial | первинний ключ |
+| client_id | integer | зовнішній ключ на `clients` |
+| nickname, species, breed | varchar(50) | обов'язкові |
+| sex | varchar(10) | `чоловіча` або `жіноча` |
+| birth_date | date | раніше за дату створення картки |
+| created_date | date | за замовчуванням поточна дата |
 
-Containers created:
+**Appointment (`appointments`)** — прийом.
 
-- Postgres database container seeded with 💊 Breaking Bad characters in `Users` table (default credentials `user=walter`, `password=white` in [.env file](./.env))
-- Node (v16 Alpine) container with running boilerplate RESTful API service
-- and one Node container instance to run tests locally or in CI
+| Поле | Тип | Обмеження |
+|---|---|---|
+| id | serial | первинний ключ |
+| medical_card_id | integer | зовнішній ключ на `medical_cards` |
+| employee_id | integer | зовнішній ключ на `employees` |
+| appointment_date | timestamp | обов'язкове |
+| purpose | text | обов'язкове |
+| exam_results | text | необов'язкове |
+| diagnosis | varchar(255) | необов'язкове |
+| total | numeric(10,2) | обов'язкове, більше нуля |
 
-## Features:
+### Зв'язки
 
-- [Express](https://github.com/expressjs/express) framework
-- [TypeScript v4](https://github.com/microsoft/TypeScript) codebase
-- [TypeORM](https://typeorm.io/) using Data Mapper pattern
-- [Docker](https://www.docker.com/) environment:
-  - Easily start local development using [Docker Compose](https://docs.docker.com/compose/) with single command `npm run docker:dev`
-  - Connect to different staging or production environments `npm run docker:[stage|prod]`
-  - Ready for **microservices** development and deployment.  
-    Once API changes are made, just build and push new docker image with your favourite CI/CD tool  
-    `docker build -t <username>/api-boilerplate:latest .`  
-    `docker push <username>/api-boilerplate:latest`
-  - Run unit, integration (or setup with your frontend E2E) tests as `docker exec -ti be_boilerplate_test sh` and `npm run test`
-- Contract first REST API design:
-  - never break API again with HTTP responses and requests payloads using [type definitions](./src/types/express/index.d.ts)
-  - Consistent schema error [response](./src/utils/response/custom-error/types.ts). Your frontend will always know how to handle errors thrown in `try...catch` statements 💪
-- JWT authentication and role based authorization using custom middleware
-- Set local, stage or production [environmental variables](./config) with [type definitions](./src/types/ProcessEnv.d.ts)
-- Logging with [morgan](https://github.com/expressjs/morgan)
-- Unit and integration tests with [Mocha](https://mochajs.org/) and [Chai](https://www.chaijs.com/)
-- Linting with [ESLint](https://eslint.org/)
-- [Prettier](https://prettier.io/) code formatter
-- Git hooks with [Husky](https://github.com/typicode/husky) and [lint-staged](https://github.com/okonet/lint-staged)
-- Automated npm & Docker dependency updates with [Renovate](https://github.com/renovatebot/renovate) (set to patch version only)
-- Commit messages must meet [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/) format.  
-  After staging changes just run `npm run commit` and get instant feedback on your commit message formatting and be prompted for required fields by [Commitizen](https://github.com/commitizen/cz-cli)
+- **Client 1 → M MedicalCard**: клієнт може мати кілька тварин, картка належить одному клієнту (`OneToMany` / `ManyToOne`). Видалення клієнта видаляє його картки (`CASCADE`).
+- **MedicalCard 1 → M Appointment**: на одну картку може бути багато прийомів, прийом стосується однієї картки. Видалення картки видаляє її прийоми (`CASCADE`).
+- **Employee 1 → M Appointment**: співробітник проводить багато прийомів, прийом проводить один співробітник. Співробітника, який має прийоми, видалити не можна (зовнішній ключ без каскаду).
 
-## Other awesome boilerplates:
+### ER-діаграма
 
-Each boilerplate comes with it's own flavor of libraries and setup, check out others:
+![ER-діаграма](screenshots/33_git5.png)
 
-- [Express and TypeORM with TypeScript](https://github.com/typeorm/typescript-express-example)
-- [Node.js, Express.js & TypeScript Boilerplate for Web Apps](https://github.com/jverhoelen/node-express-typescript-boilerplate)
-- [Express boilerplate for building RESTful APIs](https://github.com/danielfsousa/express-rest-es2017-boilerplate)
-- [A delightful way to building a RESTful API with NodeJs & TypeScript by @w3tecch](https://github.com/w3tecch/express-typescript-boilerplate)
+## Архітектура
 
-[build-badge]: https://github.com/mkosir/express-typescript-typeorm-boilerplate/actions/workflows/main.yml/badge.svg
-[build-url]: https://github.com/mkosir/express-typescript-typeorm-boilerplate/actions/workflows/main.yml
-[typescript-badge]: https://badges.frapsoft.com/typescript/code/typescript.svg?v=101
-[typescript-url]: https://github.com/microsoft/TypeScript
-[prettier-badge]: https://img.shields.io/badge/code_style-prettier-ff69b4.svg
-[prettier-url]: https://github.com/prettier/prettier
+Для кожної сутності реалізовано повний шар:
 
-## Contributing
+- `src/orm/entities/` — сутності TypeORM;
+- `src/orm/migrations/` — міграції (`CreateVetClinicTables`);
+- `src/dto/` — DTO та валідація вхідних даних;
+- `src/services/` — робота з базою даних;
+- `src/controllers/` — обробка запитів;
+- `src/routes/v1/` — маршрути.
 
-All contributions are welcome!
+## Запуск
+
+1. Запустити базу даних:
+   ```bash
+   docker compose --file docker-compose.yml --file docker-compose.dev.yml up -d db_postgres
+   ```
+2. Встановити залежності та застосувати міграції:
+   ```bash
+   npm install
+   npm run migration:run:dev
+   ```
+3. Запустити сервер:
+   ```bash
+   npm run dev
+   ```
+
+Сервер доступний на `http://localhost:4000`, база даних `vetclinic` на `localhost:8432`. Параметри підключення задано у файлі `.env`.
+
+## Автентифікація
+
+Усі ендпоінти сутностей захищені JWT. Спочатку потрібно отримати токен через `POST /v1/auth/login` (тестовий користувач `admin@admin.com` / `pass1`) і передавати його в заголовку `Authorization: Bearer <token>`. Токен дійсний 15 хвилин.
+
+![Login](screenshots/57_git5.png)
+
+## API ендпоінти
+
+Базовий префікс: `/v1`.
+
+| Метод | Шлях | Опис |
+|---|---|---|
+| POST | `/auth/login` | Отримання токена |
+| POST | `/clients` | Створити клієнта |
+| GET | `/clients` | Список клієнтів (з їхніми картками) |
+| GET | `/clients/:id` | Клієнт за ID (з його картками) |
+| PATCH | `/clients/:id` | Оновити клієнта |
+| DELETE | `/clients/:id` | Видалити клієнта |
+| POST | `/employees` | Створити співробітника |
+| GET | `/employees` | Список співробітників (з прийомами) |
+| GET | `/employees/:id` | Співробітник за ID (з прийомами) |
+| PATCH | `/employees/:id` | Оновити співробітника |
+| DELETE | `/employees/:id` | Видалити співробітника |
+| POST | `/medical-cards` | Створити медичну картку |
+| GET | `/medical-cards` | Список карток (з клієнтом і прийомами) |
+| GET | `/medical-cards/:id` | Картка за ID (з клієнтом і прийомами) |
+| PATCH | `/medical-cards/:id` | Оновити картку |
+| DELETE | `/medical-cards/:id` | Видалити картку |
+| POST | `/appointments` | Створити прийом |
+| GET | `/appointments` | Список прийомів (з карткою, клієнтом і співробітником) |
+| GET | `/appointments/:id` | Прийом за ID (з карткою, клієнтом і співробітником) |
+| PATCH | `/appointments/:id` | Оновити прийом |
+| DELETE | `/appointments/:id` | Видалити прийом |
+
+Колекцію Postman з усіма запитами збережено у файлі [`postman/VetClinic API.postman_collection.json`](postman/VetClinic%20API.postman_collection.json). Базова адреса й токен винесені у змінні колекції `baseUrl` та `token`, токен записується автоматично після запиту Login.
+
+## Приклади запитів у Postman
+
+### Створення клієнта
+
+`POST /v1/clients` — відповідь `201`.
+
+![Створення клієнта](screenshots/59_git5.png)
+
+### Отримання даних із зв'язаних таблиць (join)
+
+**Клієнт з медичними картками.** `GET /v1/clients/1` повертає клієнта з вкладеним масивом `medical_cards`.
+
+![Клієнт з картками](screenshots/60_git5.png)
+
+**Співробітник з прийомами.** `GET /v1/employees/1` повертає співробітника з вкладеним масивом `appointments`.
+
+![Співробітник з прийомами](screenshots/68_git5.png)
+
+**Медична картка з клієнтом.** `GET /v1/medical-cards/1` повертає картку з вкладеним об'єктом `client`.
+
+![Картка з клієнтом](screenshots/74_git5.png)
+
+**Прийом з карткою, клієнтом і співробітником.** `GET /v1/appointments/1` повертає прийом із вкладеним `medical_card` (всередині нього `client`) та `employee`.
+
+![Прийом з вкладеними даними](screenshots/80_git5.png)
+
+### Створення, оновлення та видалення прийому
+
+`POST /v1/appointments` — відповідь `201`.
+
+![Створення прийому](screenshots/78_git5.png)
+
+`PATCH /v1/appointments/1` — відповідь `200`.
+
+![Оновлення прийому](screenshots/81_git5.png)
+
+`DELETE /v1/appointments/2` — відповідь `200`.
+
+![Видалення прийому](screenshots/82_git5.png)
+
+Повний набір скріншотів тестування всіх ендпоінтів та етапів виконання роботи наведено у [report.md](report.md).
