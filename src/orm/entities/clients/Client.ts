@@ -1,4 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
+
+import { MedicalCard } from '../medical-cards/MedicalCard';
 
 @Entity('clients')
 export class Client {
@@ -22,4 +24,7 @@ export class Client {
 
   @Column({ length: 255, unique: true })
   email: string;
+
+  @OneToMany(() => MedicalCard, (card) => card.client)
+  medical_cards: MedicalCard[];
 }
