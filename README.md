@@ -338,4 +338,4 @@ res.customSuccess(200, 'Appointment found.', new AppointmentResponseDTO(appointm
 
 ![services і utils](screenshots/12_git6.png)
 
-Повний набір скріншотів тестування всіх ендпоінтів та етапів виконання роботи наведено у [report.md](report.md).
+Повний набір скріншотів тестування всіх ендпоінтів та етапів виконання роботи наведено у звітах: [report.md](report.md) (лабораторна робота №5) і [report_lab6.md](report_lab6.md) (лабораторна робота №6).
