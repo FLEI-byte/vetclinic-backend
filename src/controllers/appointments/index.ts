@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 
-import { validateAppointmentDto } from 'dto/appointments/AppointmentDto';
 import { AppointmentService } from 'services/appointments/AppointmentService';
 import { CustomError } from 'utils/response/custom-error/CustomError';
 
@@ -14,8 +13,9 @@ const refError = (code: string, body: any) => {
 };
 
 export const list = async (req: Request, res: Response, next: NextFunction) => {
+  const appointmentService = new AppointmentService();
   try {
-    const appointments = await AppointmentService.findAll();
+    const appointments = await appointmentService.findAll();
     res.customSuccess(200, 'List of appointments.', appointments);
   } catch (err) {
     return next(new CustomError(400, 'Raw', `Can't retrieve list of appointments.`, null, err));
@@ -24,8 +24,9 @@ export const list = async (req: Request, res: Response, next: NextFunction) => {
 
 export const show = async (req: Request, res: Response, next: NextFunction) => {
   const id = Number(req.params.id);
+  const appointmentService = new AppointmentService();
   try {
-    const appointment = await AppointmentService.findById(id);
+    const appointment = await appointmentService.findOne(id);
     if (!appointment) {
       return next(new CustomError(404, 'General', `Appointment with id:${id} not found.`, ['Appointment not found.']));
     }
@@ -36,12 +37,9 @@ export const show = async (req: Request, res: Response, next: NextFunction) => {
 };
 
 export const create = async (req: Request, res: Response, next: NextFunction) => {
-  const errors = validateAppointmentDto(req.body);
-  if (errors.length > 0) {
-    return next(new CustomError(400, 'Validation', 'Validation error.', errors));
-  }
+  const appointmentService = new AppointmentService();
   try {
-    const result = await AppointmentService.create(req.body);
+    const result = await appointmentService.create(req.body);
     if (result === 'MEDICAL_CARD_NOT_FOUND' || result === 'EMPLOYEE_NOT_FOUND') {
       return next(refError(result, req.body));
     }
@@ -53,12 +51,9 @@ export const create = async (req: Request, res: Response, next: NextFunction) =>
 
 export const update = async (req: Request, res: Response, next: NextFunction) => {
   const id = Number(req.params.id);
-  const errors = validateAppointmentDto(req.body, true);
-  if (errors.length > 0) {
-    return next(new CustomError(400, 'Validation', 'Validation error.', errors));
-  }
+  const appointmentService = new AppointmentService();
   try {
-    const result = await AppointmentService.update(id, req.body);
+    const result = await appointmentService.update(id, req.body);
     if (result === undefined) {
       return next(new CustomError(404, 'General', `Appointment with id:${id} not found.`, ['Appointment not found.']));
     }
@@ -73,8 +68,9 @@ export const update = async (req: Request, res: Response, next: NextFunction) =>
 
 export const destroy = async (req: Request, res: Response, next: NextFunction) => {
   const id = Number(req.params.id);
+  const appointmentService = new AppointmentService();
   try {
-    const removed = await AppointmentService.remove(id);
+    const removed = await appointmentService.delete(id);
     if (!removed) {
       return next(new CustomError(404, 'General', `Appointment with id:${id} not found.`, ['Appointment not found.']));
     }

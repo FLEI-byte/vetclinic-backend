@@ -1,12 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
 
-import { validateMedicalCardDto } from 'dto/medical-cards/MedicalCardDto';
 import { MedicalCardService } from 'services/medical-cards/MedicalCardService';
 import { CustomError } from 'utils/response/custom-error/CustomError';
 
 export const list = async (req: Request, res: Response, next: NextFunction) => {
+  const medicalCardService = new MedicalCardService();
   try {
-    const cards = await MedicalCardService.findAll();
+    const cards = await medicalCardService.findAll();
     res.customSuccess(200, 'List of medical cards.', cards);
   } catch (err) {
     return next(new CustomError(400, 'Raw', `Can't retrieve list of medical cards.`, null, err));
@@ -15,8 +15,9 @@ export const list = async (req: Request, res: Response, next: NextFunction) => {
 
 export const show = async (req: Request, res: Response, next: NextFunction) => {
   const id = Number(req.params.id);
+  const medicalCardService = new MedicalCardService();
   try {
-    const card = await MedicalCardService.findById(id);
+    const card = await medicalCardService.findOne(id);
     if (!card) {
       return next(
         new CustomError(404, 'General', `Medical card with id:${id} not found.`, ['Medical card not found.']),
@@ -29,12 +30,9 @@ export const show = async (req: Request, res: Response, next: NextFunction) => {
 };
 
 export const create = async (req: Request, res: Response, next: NextFunction) => {
-  const errors = validateMedicalCardDto(req.body);
-  if (errors.length > 0) {
-    return next(new CustomError(400, 'Validation', 'Validation error.', errors));
-  }
+  const medicalCardService = new MedicalCardService();
   try {
-    const card = await MedicalCardService.create(req.body);
+    const card = await medicalCardService.create(req.body);
     if (!card) {
       return next(
         new CustomError(404, 'General', `Client with id:${req.body.client_id} not found.`, ['Client not found.']),
@@ -48,12 +46,9 @@ export const create = async (req: Request, res: Response, next: NextFunction) =>
 
 export const update = async (req: Request, res: Response, next: NextFunction) => {
   const id = Number(req.params.id);
-  const errors = validateMedicalCardDto(req.body, true);
-  if (errors.length > 0) {
-    return next(new CustomError(400, 'Validation', 'Validation error.', errors));
-  }
+  const medicalCardService = new MedicalCardService();
   try {
-    const card = await MedicalCardService.update(id, req.body);
+    const card = await medicalCardService.update(id, req.body);
     if (card === undefined) {
       return next(
         new CustomError(404, 'General', `Medical card with id:${id} not found.`, ['Medical card not found.']),
@@ -72,8 +67,9 @@ export const update = async (req: Request, res: Response, next: NextFunction) =>
 
 export const destroy = async (req: Request, res: Response, next: NextFunction) => {
   const id = Number(req.params.id);
+  const medicalCardService = new MedicalCardService();
   try {
-    const removed = await MedicalCardService.remove(id);
+    const removed = await medicalCardService.delete(id);
     if (!removed) {
       return next(
         new CustomError(404, 'General', `Medical card with id:${id} not found.`, ['Medical card not found.']),
