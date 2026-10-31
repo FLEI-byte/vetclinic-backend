@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 
+import { ClientResponseDTO } from 'dto/clients/ClientResponseDTO';
 import { ClientService } from 'services/clients/ClientService';
 import { CustomError } from 'utils/response/custom-error/CustomError';
 
@@ -7,7 +8,11 @@ export const list = async (req: Request, res: Response, next: NextFunction) => {
   const clientService = new ClientService();
   try {
     const clients = await clientService.findAll();
-    res.customSuccess(200, 'List of clients.', clients);
+    res.customSuccess(
+      200,
+      'List of clients.',
+      clients.map((client) => new ClientResponseDTO(client)),
+    );
   } catch (err) {
     return next(new CustomError(400, 'Raw', `Can't retrieve list of clients.`, null, err));
   }
@@ -21,7 +26,7 @@ export const show = async (req: Request, res: Response, next: NextFunction) => {
     if (!client) {
       return next(new CustomError(404, 'General', `Client with id:${id} not found.`, ['Client not found.']));
     }
-    res.customSuccess(200, 'Client found.', client);
+    res.customSuccess(200, 'Client found.', new ClientResponseDTO(client));
   } catch (err) {
     return next(new CustomError(400, 'Raw', 'Error', null, err));
   }
@@ -31,7 +36,7 @@ export const create = async (req: Request, res: Response, next: NextFunction) =>
   const clientService = new ClientService();
   try {
     const client = await clientService.create(req.body);
-    res.customSuccess(201, 'Client successfully created.', client);
+    res.customSuccess(201, 'Client successfully created.', new ClientResponseDTO(client));
   } catch (err) {
     return next(new CustomError(409, 'Raw', `Client can't be created.`, null, err));
   }
@@ -45,7 +50,7 @@ export const update = async (req: Request, res: Response, next: NextFunction) =>
     if (!client) {
       return next(new CustomError(404, 'General', `Client with id:${id} not found.`, ['Client not found.']));
     }
-    res.customSuccess(200, 'Client successfully updated.', client);
+    res.customSuccess(200, 'Client successfully updated.', new ClientResponseDTO(client));
   } catch (err) {
     return next(new CustomError(409, 'Raw', `Client can't be updated.`, null, err));
   }

@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 
+import { AppointmentResponseDTO } from 'dto/appointments/AppointmentResponseDTO';
 import { AppointmentService } from 'services/appointments/AppointmentService';
 import { CustomError } from 'utils/response/custom-error/CustomError';
 
@@ -16,7 +17,11 @@ export const list = async (req: Request, res: Response, next: NextFunction) => {
   const appointmentService = new AppointmentService();
   try {
     const appointments = await appointmentService.findAll();
-    res.customSuccess(200, 'List of appointments.', appointments);
+    res.customSuccess(
+      200,
+      'List of appointments.',
+      appointments.map((appointment) => new AppointmentResponseDTO(appointment)),
+    );
   } catch (err) {
     return next(new CustomError(400, 'Raw', `Can't retrieve list of appointments.`, null, err));
   }
@@ -30,7 +35,7 @@ export const show = async (req: Request, res: Response, next: NextFunction) => {
     if (!appointment) {
       return next(new CustomError(404, 'General', `Appointment with id:${id} not found.`, ['Appointment not found.']));
     }
-    res.customSuccess(200, 'Appointment found.', appointment);
+    res.customSuccess(200, 'Appointment found.', new AppointmentResponseDTO(appointment));
   } catch (err) {
     return next(new CustomError(400, 'Raw', 'Error', null, err));
   }
@@ -43,7 +48,10 @@ export const create = async (req: Request, res: Response, next: NextFunction) =>
     if (result === 'MEDICAL_CARD_NOT_FOUND' || result === 'EMPLOYEE_NOT_FOUND') {
       return next(refError(result, req.body));
     }
-    res.customSuccess(201, 'Appointment successfully created.', result);
+    if (!result) {
+      return next(new CustomError(400, 'General', `Appointment can't be created.`, ['Appointment not created.']));
+    }
+    res.customSuccess(201, 'Appointment successfully created.', new AppointmentResponseDTO(result));
   } catch (err) {
     return next(new CustomError(409, 'Raw', `Appointment can't be created.`, null, err));
   }
@@ -60,7 +68,7 @@ export const update = async (req: Request, res: Response, next: NextFunction) =>
     if (result === 'MEDICAL_CARD_NOT_FOUND' || result === 'EMPLOYEE_NOT_FOUND') {
       return next(refError(result, req.body));
     }
-    res.customSuccess(200, 'Appointment successfully updated.', result);
+    res.customSuccess(200, 'Appointment successfully updated.', new AppointmentResponseDTO(result));
   } catch (err) {
     return next(new CustomError(409, 'Raw', `Appointment can't be updated.`, null, err));
   }
